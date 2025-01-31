@@ -1,0 +1,38 @@
+from flask import Flask, render_template, request, redirect, flash
+import sqlite3
+
+app = Flask(__name__)
+app.secret_key = "your_secret_key"  # Used for flash messages
+
+# Initialize database
+def init_db():
+    with sqlite3.connect("contact.db") as conn:
+        cursor = conn.cursor()
+        cursor.execute('''CREATE TABLE IF NOT EXISTS contacts (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            name TEXT NOT NULL,
+                            email TEXT NOT NULL,
+                            message TEXT NOT NULL
+                          )''')
+        conn.commit()
+
+@app.route("/", methods=["GET", "POST"])
+def contact():
+    if request.method == "POST":
+        name = request.form["name"]
+        email = request.form["email"]
+        message = request.form["message"]
+
+        with sqlite3.connect("contact.db") as conn:
+            cursor = conn.cursor()
+            cursor.execute("INSERT INTO contacts (name, email, message) VALUES (?, ?, ?)", (name, email, message))
+            conn.commit()
+            flash("Message sent successfully!", "success")
+
+        return redirect("/")
+
+    return render_template("contact.html")
+
+if __name__ == "__main__":
+    init_db()
+    app.run(debug=True)
